@@ -4,6 +4,8 @@ Pandas and Scipy Libraries: Ensure you have pandas and scipy installed for handl
 
 bash
 pip install pandas scipy  
+
+
 in python we have : 
 Data Recording:
 
@@ -13,11 +15,11 @@ Introduced commands_records: A list to store the average command for each second
 File Saving:
 
 At the end of the acquisition loop (when interrupted), the data is saved as CSV files (eeg_data.csv and commands_history.csv).
-The data is also stored in a MAT file (eeg_data.mat) suitable for loading into MATLAB or EEGLAB for analysis.
+The data is also stored in a MAT file (performancematrixtreatmentp1s1.mat/csv) which suitable for loading into MATLAB or EEGLAB for my eeg analysis.
+Real-Time Python Code for EEG Data Processing goes like this:
+pip install pylsl emotiv numpy  
 
-Real-Time Python Code for EEG Data Processing
 python
-from pylsl import StreamInfo, StreamOutlet  
 from pylsl import StreamInfo, StreamOutlet  
 import emotiv  
 import numpy as np  
@@ -26,10 +28,11 @@ import scipy.io  # For MAT file handling
 import time  
 
 # Define LSL stream info to communicate with Unity  
-info = StreamInfo('EEGData', 'EEG', 1, 100, 'float', 'emotiv12345')  
+info = StreamInfo('EEGData', 'EEG', 1, 100, 'float', 'emotiv12345')
+#the last line requires your unique emotive headset ID
 outlet = StreamOutlet(info)  
 
-# Initialize Emotiv device  
+# Try connecting to the Emotiv device  
 try:  
     headset = emotiv.Emotiv()  
     print("Connected to EMOTIV EPOC X")  
@@ -37,93 +40,64 @@ except Exception as e:
     print(f"Could not connect to Emotiv device: {e}")  
     exit()  
 
-# Initialize variables to hold average commands and previous values  
+# Initialize variables to hold the previous values  
 previous_values = {'focus': 0, 'relaxation': 0, 'engagement': 0}  
-commands_history = []  
 
-# Initialize fractal dimension  
-fractal_dimension = 1.11  # Starting fractal dimension  
-increment_value = 0.015   # Value to adjust the fractal dimension  
-print(f"Initial fractal dimension: {fractal_dimension}")  
-
-# Lists to hold data for saving  
+# Lists to hold data for saving (optional)  
 data_records = []  # To save in CSV and MAT  
 commands_records = []  # To save command history  
 
 # Main loop for data acquisition and processing  
 try:  
     while True:  
-        # Get EEG data from the Emotiv headset  
-        data = headset.dequeue()  
-        
+        data = headset.dequeue()  # Get EEG data  
+
         if data is not None:  
             # Extract focus, relaxation, and engagement scores  
             focus = data['focus']  
             relaxation = data['relax']  
             engagement = data['engagement']  
 
-            # Initialize command list for this iteration  
-            current_commands = []  
+            # Determine the command based on focus, relaxation, and engagement  
+            commands = []  
+            current_command = 0  # Default no change  
 
-            # Process each cognitive marker  
-            for key, current_value in zip(['focus', 'relax', 'engagement'], [focus, relaxation, engagement]):  
-                if current_value > previous_values[key]:  # Increased  
-                    command = 1  
-                elif current_value < previous_values[key]:  # Decreased  
-                    command = -1  
-                else:  # No change  
-                    command = 0  
-
-                current_commands.append(command)  
-                previous_values[key] = current_value  # Update previous value for next iteration  
+            if focus > previous_values['focus']:  
+                current_command = 1  # Increase  
+            elif focus < previous_values['focus']:  
+                current_command = -1  # Decrease  
             
-            # Calculate the average command for this second  
-            avg_command = int(np.mean(current_commands))  
-            commands_history.append(avg_command)  
-            commands_records.append(avg_command)  # Save command history for later analysis  
+            commands.append(current_command)  
+            previous_values['focus'] = focus  # Update previous value  
 
-            # Send avg_command to Unity via LSL  
-            outlet.push_sample([avg_command])  # Send the average command to Unity  
-            print(f"Sending avg_command to Unity: {avg_command}")  
+            # If relaxation or engagement also need commands, similar logic can be applied here  
 
-            # Adjust the fractal dimension based on the average command  
-            if avg_command == 1:  # Increased  
-                fractal_dimension += increment_value  
-            elif avg_command == -1:  # Decreased  
-                fractal_dimension -= increment_value  
-            
-            # Print current values and updated fractal dimension  
-            print(f"Focus: {focus}, Relaxation: {relaxation}, Engagement: {engagement}, Command: {avg_command}, Fractal Dimension: {fractal_dimension:.4f}")  
+            # Send command to Unity via LSL  
+            outlet.push_sample([current_command])  # Send the command to Unity  
+            print(f"Sent command: {current_command} to Unity")  
 
-            # Append data to records for output  
+            # Optional: Record data for saving if desired  
             data_records.append({  
                 'focus': focus,  
                 'relaxation': relaxation,  
                 'engagement': engagement,  
-                'command': avg_command,  
-                'fractal_dimension': fractal_dimension  
+                'command': current_command  
             })  
 
-        # Sleep briefly to allow for other processes; this can be adjusted for responsiveness  
-        time.sleep(0.01)  # Sleep for 10 milliseconds  
+        # Sleep for 1 second before the next data acquisition  
+        time.sleep(1)  
 
 except KeyboardInterrupt:  
     print("Stopping the acquisition.")  
 finally:  
     headset.close()  
 
-    # Save data to CSV  
+    # Optionally save data to CSV and MAT files if desired  
     df = pd.DataFrame(data_records)  
     df.to_csv('eeg_data.csv', index=False)  
     print("EEG data saved to CSV.")  
-
-    # Save commands to CSV  
-    commands_df = pd.DataFrame({'command': commands_records})  
-    commands_df.to_csv('commands_history.csv', index=False)  
-    print("Commands history saved to CSV.")  
-
-    # Save data to MAT file  
-    scipy.io.savemat('eeg_data.mat', { 'data': data_records })  
+    
+    scipy.io.savemat('eeg_data.mat', {'data': data_records})  
     print("EEG data saved to MAT file.")
  ------------------------------------------------------------------------------------------------------------
 
@@ -132,23 +106,41 @@ Steps to Set Up LSL in Unity
 Download the LSL Unity Plugin:
 
 You can find the LSL Unity plugin on GitHub or the official LSL website. Download and import it into your Unity project.
+the url provided blow will guid you with examples for further 
+costumizing code in unity and python:
+https://github.com/Emotiv/labstreaminglayer/blob/master/examples/unity/readme.md
+https://github.com/Emotiv/labstreaminglayer/blob/master/examples/python/readme.md
 Create a new C# script:
 
 Create a new C# script called EEGDataReceiver.
 Implement the Code:
 
 Use the following code in the EEGDataReceiver.cs script:
-EEGDataReceiver.cs
-csharp
 using System.Collections;  
 using UnityEngine;  
 using LSL;  // Make sure you have the LSL namespace included  
 
 public class EEGDataReceiver : MonoBehaviour  
-{  
+{  private Material material; // Reference to the material that has the shader  
+
+    void Start()  
+    {  
+        // Obtain the material attached to this GameObject  
+        material = GetComponent<Renderer>().material;  
+    }  
+
+    void UpdateShader()  
+    {  
+        // Ensure the fractal dimension is up-to-date  
+        float fractalDimension = material.GetFloat("_FractalDimension");  
+        material.SetFloat("_FractalDimension", fractalDimension);  
+        // You can add more shader update functionality here if needed  
+    }  
     private StreamInlet inlet;  
-    private float[] sampleBuffer = new float[1]; // Buffer to hold the incoming data  
-    private bool dataAvailable = false;  
+    private float[] sampleBuffer = new float[3]; // Buffer to hold incoming data for 3 commands  
+    private Material material; // Reference to the material that uses the shader  
+    private float fractalDimension = 1.11f; // Default fractal dimension  
+    private float lastFocus, lastEngagement, lastRelaxation;  
 
     void Start()  
     {  
@@ -171,6 +163,9 @@ public class EEGDataReceiver : MonoBehaviour
         {  
             Debug.LogError("No EEGData stream found!");  
         }  
+
+        // Find the material attached to this GameObject  
+        material = GetComponent<Renderer>().material;  
     }  
 
     void Update()  
@@ -181,33 +176,44 @@ public class EEGDataReceiver : MonoBehaviour
             int sampleCount = inlet.pull_sample(sampleBuffer);  
             if (sampleCount > 0)  
             {  
-                dataAvailable = true;  
-                HandleReceivedData(sampleBuffer[0]);  
+                HandleReceivedData(sampleBuffer);  
             }  
         }  
     }  
 
     // Handle the received data  
-    private void HandleReceivedData(float command)  
+    private void HandleReceivedData(float[] commands)  
     {  
-        Debug.Log("Received command from Python: " + command);  
+        if (commands.Length >= 3)  
+        {  
+            float focus = commands[0];  
+            float engagement = commands[1];  
+            float relaxation = commands[2];  
 
-        // Here you can implement what to do with the command  
-        // For example:  
-        if (command == 1)  
-        {  
-            Debug.Log("Action: Increase something!");  
-        }  
-        else if (command == -1)  
-        {  
-            Debug.Log("Action: Decrease something!");  
-        }  
-        else  
-        {  
-            Debug.Log("Action: No change!");  
+            // Calculate mean based on new values and last values  
+            float meanFocusChange = focus - lastFocus;  
+            float meanEngagementChange = engagement - lastEngagement;  
+            float meanRelaxationChange = relaxation - lastRelaxation;  
+
+            // Adjust the fractal dimension based on the focus, engagement, and relaxation changes  
+            float delta = (meanFocusChange + meanEngagementChange + meanRelaxationChange) / 3.0f;  
+            fractalDimension += delta > 0 ? 0.015f : (delta < 0 ? -0.015f : 0);  
+
+            // Clamp the fractal dimension to reasonable limits  
+            fractalDimension = Mathf.Clamp(fractalDimension, 1.11f, 2.0f); // Example limits  
+
+            // Set the new fractal dimension to the material  
+            material.SetFloat("_FractalDimension", fractalDimension);  
+
+            // Update the last values  
+            lastFocus = focus;  
+            lastEngagement = engagement;  
+            lastRelaxation = relaxation;  
+
+            Debug.Log($"Fractal Dimension Updated: {fractalDimension}, Focus: {focus}, Engagement: {engagement}, Relaxation: {relaxation}");  
         }  
     }  
-}  
+}
 Explanation of the Code
 Namespaces:
 
@@ -323,6 +329,12 @@ Shader "Explorer/Mandelbrot"
                 {  
                     col = tex2D(_MainTex, float2(m * _Repeat + _Time.y * _Speed, _Color));  
                 }  
+             
+                  
+                  if (iter < _FractalDimension)  
+    {  
+        col = tex2D(_MainTex, float2(m * _Repeat + _Time.y * _Speed, _Color));  
+    }  
 
                 float angle = atan2(z.x, z.y);  
                 col *= smoothstep(3, 0, fracIter);  
@@ -513,4 +525,5 @@ this is the fractal dimension code:
     }
 }
 
-And 
+This combined approach ensures that your Python code properly communicates with Unity via LSL while utilizing the Emotiv headset for real-time neurofeedback processing. Ensure you have the necessary libraries, and test the integration in your environment for the best results.
+https://github.com/Emotiv/labstreaminglayer
