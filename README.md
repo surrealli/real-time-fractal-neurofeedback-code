@@ -46,7 +46,7 @@ previous_values = {'focus': 0, 'relaxation': 0, 'engagement': 0}
 # Lists to hold data for saving (optional)  
 data_records = []  # To save in CSV and MAT  
 commands_records = []  # To save command history  
-
+outlet = StreamOutlet(info)  # Create the LSL Outlet
 # Main loop for data acquisition and processing  
 try:  
     while True:  
@@ -120,6 +120,8 @@ using System.Collections;
 using UnityEngine;  
 using LSL;  // Make sure you have the LSL namespace included  
 
+
+subscriber.Connect("tcp://localhost:8001"); // Use appropriate IP connection if required
 public class EEGDataReceiver : MonoBehaviour  
 {  private Material material; // Reference to the material that has the shader  
 
