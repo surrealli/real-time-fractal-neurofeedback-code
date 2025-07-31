@@ -1,4 +1,4 @@
-# real-time-fractal-neurofeedback-code
+# Real-time Neurofeedback System with Fractal Visuals
 first we connect python to our headset for real-time data acquision 
 Pandas and Scipy Libraries: Ensure you have pandas and scipy installed for handling CSV and MAT file saving. You can install these with:
 
