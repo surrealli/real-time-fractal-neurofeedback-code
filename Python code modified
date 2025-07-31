@@ -1,0 +1,79 @@
+from pylsl import StreamInfo, StreamOutlet
+import emotiv
+import numpy as np
+import pandas as pd
+import scipy.io
+import time
+
+# Define LSL stream info
+info = StreamInfo('EEGData', 'EEG', 3, 1, 'float32', 'emotiv12345')
+outlet = StreamOutlet(info)
+
+# Try connecting to the Emotiv device
+try:
+    headset = emotiv.Emotiv()
+    print("Connected to EMOTIV EPOC X")
+except Exception as e:
+    print(f"Could not connect to Emotiv device: {e}")
+    exit()
+
+# Initialize variables
+previous_values = {'focus': 0, 'relaxation': 0, 'engagement': 0}
+data_records = []
+commands_records = []
+
+# Main loop for data acquisition and processing
+try:
+    while True:
+        data = headset.dequeue()
+        if data is not None:
+            # Extract cognitive scores
+            focus = data['focus']
+            relaxation = data['relax']
+            engagement = data['engagement']
+            
+            # Determine commands for each metric (-1, 0, +1)
+            focus_cmd = 1 if focus > previous_values['focus'] else (-1 if focus < previous_values['focus'] else 0)
+            relax_cmd = 1 if relaxation > previous_values['relaxation'] else (-1 if relaxation < previous_values['relaxation'] else 0)
+            engage_cmd = 1 if engagement > previous_values['engagement'] else (-1 if engagement < previous_values['engagement'] else 0)
+            
+            # Calculate average command (rounded to -1, 0, or +1)
+            avg_cmd = round((focus_cmd + relax_cmd + engage_cmd) / 3)
+            avg_cmd = max(-1, min(1, avg_cmd))  # Clamp to -1, 0, or 1
+            
+            # Send commands to Unity via LSL
+            outlet.push_sample([focus_cmd, relax_cmd, engage_cmd])
+            
+            # Record data for analysis
+            data_records.append({
+                'focus': focus,
+                'relaxation': relaxation,
+                'engagement': engagement,
+                'focus_cmd': focus_cmd,
+                'relax_cmd': relax_cmd,
+                'engage_cmd': engage_cmd,
+                'avg_cmd': avg_cmd,
+                'timestamp': time.time()
+            })
+            
+            # Update previous values
+            previous_values = {
+                'focus': focus,
+                'relaxation': relaxation,
+                'engagement': engagement
+            }
+            
+            # Sleep for 1 second (1Hz update rate)
+            time.sleep(1)
+
+except KeyboardInterrupt:
+    print("Stopping the acquisition.")
+finally:
+    headset.close()
+    
+    # Save data to files
+    if data_records:
+        df = pd.DataFrame(data_records)
+        df.to_csv('eeg_data.csv', index=False)
+        scipy.io.savemat('eeg_data.mat', {'eeg_data': df.to_dict('list')})
+        print("Data saved to CSV and MAT files.")
