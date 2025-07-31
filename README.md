@@ -1,4 +1,25 @@
 # Real-time Neurofeedback System with Fractal Visuals
+
+neurofeedback-fractal-system/
+├── Python/
+│   ├── eeg_processing.py
+│   ├── requirements.txt
+│   └── utils.py
+├── Unity/
+│   ├── Assets/
+│   │   ├── Scripts/
+│   │   │   ├── EEGDataReceiver.cs
+│   │   │   └── FractalController.cs
+│   │   ├── Shaders/
+│   │   │   └── Mandelbrot.shader
+│   │   └── Resources/
+│   └── README.md
+├── Documentation/
+│   ├── Research_Protocol.md
+│   └── System_Architecture.png
+├── .gitignore
+
+
 first we connect python to our headset for real-time data acquision 
 Pandas and Scipy Libraries: Ensure you have pandas and scipy installed for handling CSV and MAT file saving. You can install these with:
 
