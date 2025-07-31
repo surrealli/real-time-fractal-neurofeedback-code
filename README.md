@@ -19,6 +19,70 @@ neurofeedback-fractal-system/
 │   └── System_Architecture.png
 ├── .gitignore
 
+# Real-time Neurofeedback System with Fractal Visuals
+
+![System Diagram](Documentation/System_Architecture.png)
+
+This repository contains a real-time neurofeedback system that adjusts fractal visual complexity based on EEG-measured cognitive states (focus, relaxation, engagement).
+
+## Key Features
+- Real-time EEG data processing with EMOTIV headsets
+- Cognitive state monitoring (focus, relaxation, engagement)
+- Adaptive fractal visualization with dynamic complexity adjustment
+- Closed-loop feedback system
+- Data recording for research analysis
+- Double-blind experimental protocol support
+
+## System Components
+1. **Python Processing**:
+   - EEG data acquisition
+   - Cognitive state analysis
+   - Command generation (-1, 0, +1)
+   - LSL data streaming
+   - Session data recording
+
+2. **Unity Visualization**:
+   - Fractal rendering with dynamic complexity
+   - Real-time feedback integration
+   - Experimental interface
+
+3. **Research Protocol**:
+   - Double-blind, sham-controlled design
+   - Session management
+   - Data collection framework
+
+## Setup Instructions
+
+### Python Requirements
+```bash
+cd Python
+pip install -r requirements.txt
+Unity Setup
+Import LSL4Unity package
+
+Create fractal material using Mandelbrot.shader
+
+Attach EEGDataReceiver and FractalController scripts to fractal object
+
+Configure material properties in FractalController
+
+Running the System
+Start Python processing:
+
+bash
+python eeg_processing.py
+Launch Unity scene
+
+Monitor cognitive states and fractal adjustments
+
+Research Protocol
+See Documentation/Research_Protocol.md for detailed experimental design and methodology.
+
+Contributing
+This project is part of ongoing research. For collaboration opportunities, contact Salimiali74@gmail.com .
+
+
+
 
 first we connect python to our headset for real-time data acquision 
 Pandas and Scipy Libraries: Ensure you have pandas and scipy installed for handling CSV and MAT file saving. You can install these with:
