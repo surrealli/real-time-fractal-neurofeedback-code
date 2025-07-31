@@ -1,0 +1,19 @@
+neurofeedback-fractal-system/
+├── README.md
+├── LICENSE
+├── .gitignore
+├── docs/
+│   ├── methodology.md
+│   └── setup_instructions.md
+├── python/
+│   ├── requirements.txt
+│   └── eeg_acquisition.py
+└── unity/
+    ├── Assets/
+    │   ├── Scripts/
+    │   │   ├── EEGDataReceiver.cs
+    │   │   └── Explorer.cs
+    │   └── Shaders/
+    │       └── MandelbrotWithFractalDimension.shader
+    └── ProjectSettings/
+        └── ProjectVersio
